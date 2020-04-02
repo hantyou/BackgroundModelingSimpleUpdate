@@ -27,7 +27,6 @@ def ShowSubIm(string, I, B):
     plt.imshow(I)
     plt.subplot(1, 2, 2)
     plt.imshow(B)
-    plt.show()
 
 
 def ShowSubImReal(string, I, B):
@@ -210,7 +209,8 @@ class LBP:
         # plt.show()
 
     def get_hist(self, img_array, im_bins, im_range):
-        hist = cv2.calcHist([img_array], [0], None, im_bins, im_range)
+        [a, b] = [img_array.shape[0], img_array.shape[1]]
+        hist = cv2.calcHist([img_array[1:a - 1, 1:b - 1]], [0], None, im_bins, im_range)
         hist = cv2.normalize(hist, None).flatten()
         return hist
 
@@ -224,6 +224,10 @@ class LBP:
     # 绘制图像原始LBP特征的归一化统计直方图
     def show_basic_hist(self, img_array):
         self.show_hist(img_array, [256], [0, 256])
+
+    def get_basic_hist(self, img_array):
+        hist = self.get_hist(img_array, [256], [0, 256])
+        return hist
 
     def cv_show_basic_hist(self, img_array):
         self.cv_show_hist(img_array, [256], [0, 256])
@@ -240,9 +244,17 @@ class LBP:
     def show_uniform_hist(self, img_array):
         self.show_hist(img_array, [60], [0, 60])
 
+    def get_uniform_hist(self, img_array):
+        hist = self.get_hist(img_array, [60], [0, 60])
+        return hist
+
     # 绘制图像旋转不变等价模式LBP特征的归一化统计直方图
     def show_revolve_uniform_hist(self, img_array):
         self.show_hist(img_array, [10], [0, 10])
+
+    def get_revolve_uniform_hist(self, img_array):
+        hist = self.get_hist(img_array, [10], [0, 10])
+        return hist
 
     # 显示图像
     def show_image(self, image_array):
