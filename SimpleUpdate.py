@@ -12,7 +12,7 @@ sysbg = cv2.createBackgroundSubtractorMOG2(500, 30, detectShadows=True)
 c_path = getcwd()
 v_path = "D:\\Programming\\MATLAB\\video_prog\\"
 methodInPath = r"\System2"
-v_filename = "VID_20200311_134153.mp4"
+v_filename = "FroggerHighway.mp4"
 filepath = v_path + "\\" + v_filename
 vid = cv2.VideoCapture(filepath)
 CheckVideo(vid)
@@ -22,12 +22,13 @@ w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
 a = 0.055  # 更新率，a为背景更新率，b为前景更新率
 b = 0.001
 BinaryThreshold = 30
-LBP_threshold = 1.3
+LBP_threshold = 0.5
+decay = 0.0000001
 UpdateThred = 20
-DelayWaitFrameNum = 60
+DelayWaitFrameNum = 80
 NumFrameForceForeToBack = 100  # 当一个目标多少帧之后，它会强制转换为背景
-kernel1 = np.ones((3, 3), np.uint8)
-kernel2 = np.ones((3, 3), np.uint8)
+kernel1 = np.ones((1, 1), np.uint8)
+kernel2 = np.ones((2, 2), np.uint8)
 kernel3 = np.ones((3, 3), np.uint8)
 kernel4 = np.ones((3, 3), np.uint8)
 chn = 3  # 色彩通道数
@@ -165,18 +166,21 @@ while 1:
 
     SubR = np.uint8(Sub / 255)  # SubR用来做掩模版，区分出前景和后景
     # out = CompareLBP(cv2.pyrDown(gray), cv2.pyrDown(grayBG), cv2.pyrDown(SubAll / 255), windowSize=8, step=8)
-    if UseLBP:
-        out = CompareLBP(MyResize(gray, 1.5), MyResize(grayBG, 1.5), MyResize(SubAll / 255, 1.5), windowSize=8, step=8)
-        cv2.imshow("LBP", out)
 
-        out = cv2.GaussianBlur(out, (0, 0), sigmaX=2,
-                               sigmaY=2)
-        out = cv2.resize(out, (SubR.shape[0], SubR.shape[1]))
-        ret, out = cv2.threshold(out, LBP_threshold, 1, type=cv2.THRESH_BINARY)
-        for i in range(chn):
-            SubR[:, :, i] = SubR[:, :, i] + out
-        SubR = np.uint8(np.where(SubR > 0, 1, 0))
-        cv2.imshow("LBP Fore", np.uint8(out * gray))
+    if not FrameNum % 1:
+        if UseLBP:
+            out = CompareLBP(MyResize(gray, 1.5), MyResize(grayBG, 1.5), MyResize(SubAll / 255, 1.5), windowSize=7,
+                             step=7, region_thresh=2, decay=decay)
+
+            out = cv2.GaussianBlur(out, (0, 0), sigmaX=1.1,
+                                   sigmaY=1.1)
+            cv2.imshow("LBP", out)
+            out = cv2.resize(out, (SubR.shape[0], SubR.shape[1]))
+            ret, out = cv2.threshold(out, LBP_threshold, 1, type=cv2.THRESH_BINARY)
+            for i in range(chn):
+                SubR[:, :, i] = SubR[:, :, i] + out
+            SubR = np.uint8(np.where(SubR > 0, 1, 0))
+            cv2.imshow("LBP Fore", np.uint8(out * gray))
     BG_ForeD = BG * SubR
     BG_BackD = BG - BG_ForeD
     # cv2.imshow("Region Flaged as Background in Current Background", BG_BackD[:, :, 0])

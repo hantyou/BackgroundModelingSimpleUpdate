@@ -20,16 +20,16 @@ def MyResize(I, factor):
 def calc_regional_LBP(target, background, lbp, out, yt, xt, windowSize):
     t_windowed = target[yt:yt + windowSize, xt:xt + windowSize]
     b_windowed = background[yt:yt + windowSize, xt:xt + windowSize]
-    t_LBP_map = lbp.lbp_revolve(t_windowed)
-    b_LBP_map = lbp.lbp_revolve(b_windowed)
-    t_hist = lbp.get_revolve_hist(t_LBP_map)
-    b_hist = lbp.get_revolve_hist(b_LBP_map)
+    t_LBP_map = lbp.lbp_uniform(t_windowed)
+    b_LBP_map = lbp.lbp_uniform(b_windowed)
+    t_hist = lbp.get_uniform_hist(t_LBP_map)
+    b_hist = lbp.get_uniform_hist(b_LBP_map)
     d = LBP.chi2_distance(t_hist, b_hist)
     # print((j, i))
     out[yt:yt + windowSize, xt:xt + windowSize] += np.ones((windowSize, windowSize)) * d
 
 
-def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3):
+def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3, decay=0.05):
     print("Calculating LBP of Image")
     [h, w] = [target.shape[0], target.shape[1]]
     x_iter = int((w - windowSize) / step) + 1
@@ -39,11 +39,11 @@ def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3):
     out = np.zeros((h, w))
     lbp = LBP.LBP()
     flag = 0
-    deviation = 0.05
-    deviation1 = deviation
-    deviation2 = deviation
-    deviation3 = deviation
-    deviation4 = deviation
+    deviation = decay
+    deviation1 = deviation*0.75
+    deviation2 = deviation*0.75
+    deviation3 = deviation*0.75
+    deviation4 = deviation*0.75
     for j in range(y_iter):
         for i in range(x_iter):
             xt = i * step
@@ -55,9 +55,10 @@ def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3):
                 CalcFlag = CalcFlag or region_flag(Sub, yt + windowSize, xt + windowSize, windowSize, region_thresh)
                 CalcFlag = CalcFlag or region_flag(Sub, yt, xt + windowSize, windowSize, region_thresh)
             if CalcFlag:
-                flag += 2
+                flag += 3
                 if flag > 0:
                     calc_regional_LBP(target, background, lbp, out, yt, xt, windowSize)
+
                     if j < y_iter - 2 and j > 1 and i < x_iter - 2 and i > 1:
                         # if not region_flag(Sub, yt - windowSize, xt - windowSize, windowSize, region_thresh):
                         if region_flag(out, yt - windowSize, xt - windowSize, windowSize, region_thresh * deviation1):
