@@ -8,6 +8,10 @@ def region_flag(Sub, yt, xt, windowSize, region_thresh):
     return np.sum(Sub[yt:yt + windowSize, xt:xt + windowSize]) > (windowSize ** 2) / region_thresh
 
 
+def region_flag_out(out, yt, xt, windowSize, region_thresh_out):
+    return np.sum(out[yt:yt + windowSize, xt:xt + windowSize]) <= region_thresh_out
+
+
 def MyResize(I, factor):
     w = I.shape[0]
     h = I.shape[1]
@@ -40,10 +44,10 @@ def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3, 
     lbp = LBP.LBP()
     flag = 0
     deviation = decay
-    deviation1 = deviation*0.75
-    deviation2 = deviation*0.75
-    deviation3 = deviation*0.75
-    deviation4 = deviation*0.75
+    deviation1 = deviation * 0.75
+    deviation2 = deviation * 0.75
+    deviation3 = deviation * 0.75
+    deviation4 = deviation * 0.75
     for j in range(y_iter):
         for i in range(x_iter):
             xt = i * step
@@ -54,6 +58,10 @@ def CompareLBP(target, background, Sub, windowSize=32, step=4, region_thresh=3, 
                 CalcFlag = CalcFlag or region_flag(Sub, yt + windowSize, xt, windowSize, region_thresh)
                 CalcFlag = CalcFlag or region_flag(Sub, yt + windowSize, xt + windowSize, windowSize, region_thresh)
                 CalcFlag = CalcFlag or region_flag(Sub, yt, xt + windowSize, windowSize, region_thresh)
+                CalcFlag = CalcFlag and region_flag_out(out, yt + windowSize, xt - windowSize, windowSize, 1)
+                CalcFlag = CalcFlag and region_flag_out(out, yt + windowSize, xt, windowSize, 1)
+                CalcFlag = CalcFlag and region_flag_out(out, yt + windowSize, xt + windowSize, windowSize, 1)
+                CalcFlag = CalcFlag and region_flag_out(out, yt, xt + windowSize, windowSize, 1)
             if CalcFlag:
                 flag += 3
                 if flag > 0:
