@@ -1,17 +1,24 @@
 # This is a test of reading vedio
 
 from os import getcwd
+import os
 
 from LBPfuncs import CompareLBP, MyResize
 from UpdateFuncs import *
 from get_LBP_from_Image import *
+
+from PIL import Image
+import torch
+print(torch.__version__)
+
+from run_placesCNN_unified import placeCNN
 
 sysbg = cv2.createBackgroundSubtractorMOG2(500, 30, detectShadows=True)
 # sysKNN = cv2.createBackgroundSubtractorKNN(500, 50, detectShadows=True)
 """文件的读取与视频文件的初始化"""
 c_path = getcwd()
 v_path = "D:\\Programming\\MATLAB\\video_prog\\"
-methodInPath = r"\System2"
+methodInPath = r"\tpres"
 v_filename = "FroggerHighway.mp4"
 filepath = v_path + "\\" + v_filename
 vid = cv2.VideoCapture(filepath)
@@ -22,7 +29,7 @@ w = vid.get(cv2.CAP_PROP_FRAME_WIDTH)
 a = 0.055  # 更新率，a为背景更新率，b为前景更新率
 b = 0.001
 BinaryThreshold = 30
-LBP_threshold = 0.5
+LBP_threshold = 3
 decay = 0.0000001
 UpdateThred = 20
 DelayWaitFrameNum = 80
@@ -78,7 +85,7 @@ DoMorphology_1 = True  # 使用形态学处理消除小区域，先开后闭
 DoMorphology_2 = False  # 获得轮廓后使用形态学处理消除小区域，先开后闭
 GenContours = True  # 显示物体轮廓
 MedBlur = False  # 中值滤波选择
-UseLBP = True  # 使用LBP纹理信息
+UseLBP = False  # 使用LBP纹理信息
 """策略选择自动纠错环节"""
 CheckTackle(GenContours, UseMinimumRecContours, UpdateWithinContours, UpdateSeparately, a, b)
 lbp = LBP()
@@ -134,7 +141,8 @@ while 1:
         Sub = cv2.medianBlur(Sub, 3)
     """生成轮廓"""
     if GenContours:
-        contours, hierarchy = cv2.findContours(image=SubAll, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+        # contours, hierarchy = cv2.findContours(image=SubAll, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+        contours = cv2.findContours(image=SubAll, mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)[0]
         FrameForContours = frame.copy()
         if UseMinimumRecContours:  # 生成最小矩阵轮廓
             SubTemp = np.where(SubTemp == 0, SubTemp, 0)
@@ -169,8 +177,8 @@ while 1:
 
     if not FrameNum % 1:
         if UseLBP:
-            out = CompareLBP(MyResize(gray, 1.5), MyResize(grayBG, 1.5), MyResize(SubAll / 255, 1.5), windowSize=7,
-                             step=7, region_thresh=2, decay=decay)
+            out = CompareLBP(MyResize(gray, 1.5), MyResize(grayBG, 1.5), MyResize(SubAll / 255, 1.5), windowSize=10,
+                             step=10, region_thresh=2, decay=decay)
 
             out = cv2.GaussianBlur(out, (0, 0), sigmaX=1.1,
                                    sigmaY=1.1)
@@ -199,6 +207,11 @@ while 1:
     BG_NotUpdate = BG * BG_DiffFlag
     BG_Update = BG - BG_NotUpdate
     BG = BG_Update + Old_BG_Reserve
+    """To the CNN"""
+    if FrameNum%10 is 0:
+        os.system('cls')
+        placeCNN(BG,FrameNum)
+        placeCNN(frame_org,FrameNum)
     """显示各个图像"""
     cv2.imshow('Current Frame (Colored)', frame)
     cv2.imshow("Current Background (Colored)", BG)
