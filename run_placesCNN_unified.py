@@ -12,7 +12,7 @@ import cv2
 from PIL import Image
 import urllib.request as urllib2
 
-def placeCNN(BG,frameNum):
+def placeCNN(BG,frameNum,camname):
     img = Image.fromarray(cv2.cvtColor(BG, cv2.COLOR_BGR2RGB))
 
     def load_labels():
@@ -145,23 +145,32 @@ def placeCNN(BG,frameNum):
     # print(model)
 
     # output the IO prediction
+    f = open(r'Results/WithCNNTest/'+camname+r'.txt',"a")
     io_image = np.mean(labels_IO[idx[:10]])  # vote for the indoor or outdoor
+    print('--FrameNum is {}'.format(frameNum))
+    f.write('--FrameNum is {}'.format(frameNum)+'\n')
     if io_image < 0.5:
         print('--TYPE OF ENVIRONMENT: indoor')
+        f.write('--TYPE OF ENVIRONMENT: indoor'+'\n')
     else:
         print('--TYPE OF ENVIRONMENT: outdoor')
+        f.write('--TYPE OF ENVIRONMENT: outdoor'+'\n')
 
     # output the prediction of scene category
     print('--SCENE CATEGORIES:')
+    f.write('--SCENE CATEGORIES:'+'\n')
     for i in range(0, 5):
+        f.write('{:.3f} -> {}'.format(probs[i], classes[idx[i]])+'\n')
         print('{:.3f} -> {}'.format(probs[i], classes[idx[i]]))
 
     # output the scene attributes
     responses_attribute = W_attribute.dot(features_blobs[1])
     idx_a = np.argsort(responses_attribute)
+    f.write('--SCENE ATTRIBUTES:'+'\n')
     print('--SCENE ATTRIBUTES:')
+    f.write(', '.join([labels_attribute[idx_a[i]] for i in range(-1, -10, -1)])+'\n')
     print(', '.join([labels_attribute[idx_a[i]] for i in range(-1, -10, -1)]))
-
+    f.close()
     # generate class activation mapping
     print('Class activation map is saved as cam.jpg')
     CAMs = returnCAM(features_blobs[0], weight_softmax, [idx[0]])
@@ -171,5 +180,5 @@ def placeCNN(BG,frameNum):
     height, width, _ = BG.shape
     heatmap = cv2.applyColorMap(cv2.resize(CAMs[0], (width, height)), cv2.COLORMAP_JET)
     result = heatmap * 0.4 + BG * 0.5
-    cv2.imwrite(r"Results/"+str(frameNum)+r".jpg", result)
+    cv2.imwrite(r"Results/WithCNNTest/"+camname+str(frameNum)+r".jpg", result)
 
